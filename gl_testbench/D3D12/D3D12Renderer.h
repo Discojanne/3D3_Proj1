@@ -67,6 +67,8 @@ private:
 
 	static const unsigned int NUM_SWAP_BUFFERS = 2; //Number of buffers
 
+	std::unordered_map<Technique*, std::vector<Mesh*>> mDrawList;
+
 	ID3D12Device5*				mDevice5 = nullptr;
 
 	ID3D12CommandQueue*			mCommandQueue = nullptr;

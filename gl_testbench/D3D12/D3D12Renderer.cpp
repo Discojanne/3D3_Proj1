@@ -1,5 +1,8 @@
 #include "D3D12Renderer.h"
 #include "MaterialD3D12.h"
+#include "../IA.h"
+#include "MeshD3D12.h"
+#include "ConstantBufferD3D12.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -66,7 +69,8 @@ VertexBuffer * D3D12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_U
 
 ConstantBuffer * D3D12Renderer::makeConstantBuffer(std::string NAME, unsigned int location)
 {
-	return nullptr;
+	ConstantBufferD3D12 *pCB = new ConstantBufferD3D12(NAME, location);
+	return pCB;
 }
 
 RenderState * D3D12Renderer::makeRenderState()
@@ -299,10 +303,49 @@ void D3D12Renderer::setRenderState(RenderState * ps)
 
 void D3D12Renderer::submit(Mesh* mesh)
 {
+	mDrawList[mesh->technique].push_back(mesh);
 }
 
 void D3D12Renderer::frame()
 {
+	UINT backBufferIndex = mSwapChain4->GetCurrentBackBufferIndex();
+
+	for (auto technique : mDrawList)
+	{
+		int nObjectsWithTechnique = technique.second.size();
+		int nQueuedToDraw = 0;
+		ConstantBufferD3D12* cbData;
+
+		while (nQueuedToDraw < nObjectsWithTechnique)
+		{
+			//Update GPU memory
+			char* c = new char[45];
+			void* mappedMem = c + 1;
+			D3D12_RANGE readRange = { 0, 0 }; //We do not intend to read this resource on the CPU.
+
+			if (SUCCEEDED(mConstantBufferResource[backBufferIndex]->Map(0, &readRange, &mappedMem)))
+			{
+				int nQueuedToDraw2 = 0;
+
+				for (size_t i = 0; i < 50 && nQueuedToDraw < nObjectsWithTechnique; i++)//Draw 50 at a time
+				{
+					cbData = static_cast<ConstantBufferD3D12*>(technique.second.at(i)->txBuffer);
+
+					//Copy object data to constantbuffer.
+					memcpy((char*)mappedMem + i * cbData->buffSize, technique.second[nQueuedToDraw]->txBuffer, cbData->buffSize);
+
+					nQueuedToDraw++;
+					nQueuedToDraw2++;
+				}
+				//D3D12_RANGE writeRange = { 0, sizeof(ConstantBuffer) };
+				D3D12_RANGE writeRange = { 0, cbData->buffSize * nQueuedToDraw2 }; // Dont copy more data to GPU than what is needed. (Not tested yet)
+				mConstantBufferResource[backBufferIndex]->Unmap(0, &writeRange);
+			}
+
+		}
+	}
+
+	mDrawList.clear();
 }
 
 void D3D12Renderer::present()

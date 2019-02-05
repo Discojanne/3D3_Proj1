@@ -152,9 +152,7 @@
     <ClCompile Include="D3D12\ConstantBufferD3D12.cpp" />
     <ClCompile Include="D3D12\D3D12Renderer.cpp" />
     <ClCompile Include="D3D12\MaterialD3D12.cpp" />
-    <ClCompile Include="D3D12\MeshGL.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="D3D12\MeshD3D12.cpp" />
     <ClCompile Include="D3D12\RenderStateGL.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -202,9 +200,7 @@
     <ClInclude Include="D3D12\ConstantBufferD3D12.h" />
     <ClInclude Include="D3D12\D3D12Renderer.h" />
     <ClInclude Include="D3D12\MaterialD3D12.h" />
-    <ClInclude Include="D3D12\MeshGL.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="D3D12\MeshD3D12.h" />
     <ClInclude Include="D3D12\RenderStateGL.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>

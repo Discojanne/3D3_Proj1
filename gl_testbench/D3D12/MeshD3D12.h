@@ -1,13 +1,12 @@
 #pragma once
 #include <unordered_map>
-#include <gl\glew.h>
 #include "../Mesh.h"
 
-class MeshGL :
+class MeshD3D12 :
 	public Mesh
 {
 public:
-	MeshGL();
-	~MeshGL();
+	MeshD3D12();
+	~MeshD3D12();
 };
 

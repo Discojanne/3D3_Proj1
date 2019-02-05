@@ -1,5 +1,6 @@
 #pragma once
 #include "../ConstantBuffer.h"
+#include "D3D12Renderer.h"
 
 class ConstantBufferD3D12 : public ConstantBuffer
 {
@@ -10,12 +11,15 @@ public:
 	void bind(Material*);
 
 private:
+	friend D3D12Renderer;
+	//D3D12Renderer *m_pRenderer;
 
 	std::string name;
-	unsigned int location;
-	unsigned int handle;
-	unsigned int index;
+	//unsigned int location;
+	//unsigned int handle;
+	//unsigned int index;
 	void* buff = nullptr;
-	void* lastMat;
+	int buffSize = 0;
+	//void* lastMat;
 };
 

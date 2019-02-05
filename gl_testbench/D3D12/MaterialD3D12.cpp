@@ -36,6 +36,7 @@ void MaterialD3D12::setShader(const std::string & shaderFileName, ShaderType typ
 
 void MaterialD3D12::removeShader(ShaderType type)
 {
+
 }
 
 int MaterialD3D12::compileMaterial(std::string & errString)
@@ -154,10 +155,12 @@ void MaterialD3D12::setDiffuse(Color c)
 
 void MaterialD3D12::updateConstantBuffer(const void * data, size_t size, unsigned int location)
 {
+	constantBuffers[location]->setData(data, size,this, location);
 }
 
 void MaterialD3D12::addConstantBuffer(std::string name, unsigned int location)
 {
+	constantBuffers[location] = new ConstantBufferD3D12(name, location);
 }
 
 int MaterialD3D12::compileShader(ShaderType type, std::string & errString)
