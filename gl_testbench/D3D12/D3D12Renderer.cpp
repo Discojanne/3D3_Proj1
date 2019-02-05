@@ -132,20 +132,17 @@ int D3D12Renderer::initialize(unsigned int width, unsigned int height)
 			//return -6;
 
 		if (!CreateRootSignature())							//7. Create root signature
-		{
 			return -7;
-		}
-		if (!CreateShadersAndPiplelineState())				//8. Set up the pipeline state
-		{
-			return -8;
-		}
-
-
-		if (!CreateConstantBufferResources())				//9. Create constant buffer data
-			return -9;
-
-		if (!CreateTriangleData()) //10. Create vertexdata
-			return -10;
+		
+		/*==		Stuff below should not be done here		  ==*/
+		/*==The rest is called from main using the RendererAPI==*/
+		
+		//if (!CreateShadersAndPiplelineState())				//8. Set up the pipeline state
+		//	return -8;
+		//if (!CreateConstantBufferResources())				//9. Create constant buffer data
+		//	return -9;
+		//if (!CreateTriangleData())							//10. Create vertexdata
+		//	return -10;
 
 
 		WaitForGpu();

@@ -107,10 +107,10 @@ int MaterialD3D12::compileMaterial(std::string & errString)
 	gpsd.pRootSignature = mRootSignature;
 	gpsd.InputLayout = inputLayoutDesc;
 	gpsd.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[0]->GetBufferPointer());
-	gpsd.VS.BytecodeLength = shaderBlob[0]->GetBufferSize();
-	gpsd.PS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[4]->GetBufferPointer());
-	gpsd.PS.BytecodeLength = shaderBlob[4]->GetBufferSize();
+	gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(Material::ShaderType::VS)]->GetBufferPointer());
+	gpsd.VS.BytecodeLength = shaderBlob[static_cast<int>(Material::ShaderType::VS)]->GetBufferSize();
+	gpsd.PS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(Material::ShaderType::PS)]->GetBufferPointer());
+	gpsd.PS.BytecodeLength = shaderBlob[static_cast<int>(Material::ShaderType::PS)]->GetBufferSize();
 
 	//Specify render target and depthstencil usage.
 	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;

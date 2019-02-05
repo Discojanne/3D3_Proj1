@@ -226,9 +226,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\assets\D3D12\PixelShader.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
     <FxCompile Include="..\assets\D3D12\FragmentShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
