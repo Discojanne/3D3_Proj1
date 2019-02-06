@@ -54,7 +54,10 @@ D3D12Renderer::~D3D12Renderer()
 
 Material * D3D12Renderer::makeMaterial(const std::string & name)
 {
-	return new MaterialD3D12(name);
+	MaterialD3D12* mat = new MaterialD3D12(name);
+	mat->device = mDevice5;
+
+	return mat;
 }
 
 Mesh * D3D12Renderer::makeMesh()
@@ -139,8 +142,10 @@ int D3D12Renderer::initialize(unsigned int width, unsigned int height)
 		
 		//if (!CreateShadersAndPiplelineState())				//8. Set up the pipeline state
 		//	return -8;
-		//if (!CreateConstantBufferResources())				//9. Create constant buffer data
-		//	return -9;
+		if (!CreateConstantBufferResources(TRANSLATION))				//9. Create constant buffer data
+			return -9;
+		if (!CreateConstantBufferResources(DIFFUSE_TINT))				//9. Create constant buffer data
+			return -9;
 		//if (!CreateTriangleData())							//10. Create vertexdata
 		//	return -10;
 
@@ -307,36 +312,38 @@ void D3D12Renderer::frame()
 {
 	UINT backBufferIndex = mSwapChain4->GetCurrentBackBufferIndex();
 
-	for (auto technique : mDrawList)
+	for (auto technique : mDrawList)//For each technique/Material
 	{
+		//Enable the material, material specific constant buffer could be set inside enable().
+		technique.first->enable(this);
+
 		int nObjectsWithTechnique = technique.second.size();
 		int nQueuedToDraw = 0;
-		ConstantBufferD3D12* cbData;
+		ConstantBufferD3D12* cb_perObject;
 
-		while (nQueuedToDraw < nObjectsWithTechnique)
+		while (nQueuedToDraw < nObjectsWithTechnique) 
 		{
 			//Update GPU memory
-			char* c = new char[45];
-			void* mappedMem = c + 1;
 			D3D12_RANGE readRange = { 0, 0 }; //We do not intend to read this resource on the CPU.
+			void* mappedMem = nullptr;
 
-			if (SUCCEEDED(mConstantBufferResource[backBufferIndex]->Map(0, &readRange, &mappedMem)))
+			if (SUCCEEDED(mConstantBufferResources[backBufferIndex][cb_perObject->location]->Map(0, &readRange, &mappedMem)))
 			{
 				int nQueuedToDraw2 = 0;
 
 				for (size_t i = 0; i < 50 && nQueuedToDraw < nObjectsWithTechnique; i++)//Draw 50 at a time
 				{
-					cbData = static_cast<ConstantBufferD3D12*>(technique.second.at(i)->txBuffer);
+					cb_perObject = static_cast<ConstantBufferD3D12*>(technique.second.at(i)->txBuffer);
 
-					//Copy object data to constantbuffer.
-					memcpy((char*)mappedMem + i * cbData->buffSize, technique.second[nQueuedToDraw]->txBuffer, cbData->buffSize);
+					//Copy object data to constantbuffer. /*Casting void* to char* so i can add offset in bytes*/
+					memcpy(static_cast<void*>(static_cast<char*>(mappedMem) + i * cb_perObject->buffSize), technique.second[nQueuedToDraw]->txBuffer, cb_perObject->buffSize);
 
 					nQueuedToDraw++;
 					nQueuedToDraw2++;
 				}
 				//D3D12_RANGE writeRange = { 0, sizeof(ConstantBuffer) };
-				D3D12_RANGE writeRange = { 0, cbData->buffSize * nQueuedToDraw2 }; // Dont copy more data to GPU than what is needed. (Not tested yet)
-				mConstantBufferResource[backBufferIndex]->Unmap(0, &writeRange);
+				D3D12_RANGE writeRange = { 0, cb_perObject->buffSize * nQueuedToDraw2 }; // Dont copy more data to GPU than what is needed. (Not tested yet)
+				mConstantBufferResources[backBufferIndex][cb_perObject->location]->Unmap(0, &writeRange);
 			}
 
 		}
@@ -761,12 +768,17 @@ bool D3D12Renderer::CreateRootSignature()
 	HRESULT hr;
 
 	//define descriptor range(s)
-	D3D12_DESCRIPTOR_RANGE  dtRanges[1];
+	D3D12_DESCRIPTOR_RANGE  dtRanges[2];
 	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 	dtRanges[0].NumDescriptors = 1; //only one CB in this example
 	dtRanges[0].BaseShaderRegister = 0; //register b0
-	dtRanges[0].RegisterSpace = 0; //register(b0,space0);
+	dtRanges[0].RegisterSpace = TRANSLATION; //register(b0,space0);
 	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	dtRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	dtRanges[1].NumDescriptors = 1; //only one CB in this example
+	dtRanges[1].BaseShaderRegister = 1; //register b0
+	dtRanges[1].RegisterSpace = DIFFUSE_TINT; //register(b0,space0);
+	dtRanges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//create a descriptor table
 	D3D12_ROOT_DESCRIPTOR_TABLE dt;
@@ -810,19 +822,19 @@ bool D3D12Renderer::CreateRootSignature()
 	return true;
 }
 
-bool D3D12Renderer::CreateConstantBufferResources()
+bool D3D12Renderer::CreateConstantBufferResources(int location)
 {
 	HRESULT hr;
 
 	for (int i = 0; i < NUM_SWAP_BUFFERS; i++)
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC heapDescriptorDesc = {};
-		heapDescriptorDesc.NumDescriptors = 1;
-		heapDescriptorDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		heapDescriptorDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		hr = mDevice5->CreateDescriptorHeap(&heapDescriptorDesc, IID_PPV_ARGS(&mDescriptorHeap[i]));
-		if (FAILED(hr))
-			return false;
+			D3D12_DESCRIPTOR_HEAP_DESC heapDescriptorDesc = {};
+			heapDescriptorDesc.NumDescriptors = 1;
+			heapDescriptorDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			heapDescriptorDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			hr = mDevice5->CreateDescriptorHeap(&heapDescriptorDesc, IID_PPV_ARGS(&mDescriptorHeaps[i][location]));
+			if (FAILED(hr))
+				return false;
 	}
 
 	UINT cbSizeAligned = (sizeof(ConstantBuffer) + 255) & ~255;	// 256-byte aligned CB.
@@ -846,23 +858,23 @@ bool D3D12Renderer::CreateConstantBufferResources()
 	//Create a resource heap, descriptor heap, and pointer to cbv for each frame
 	for (int i = 0; i < NUM_SWAP_BUFFERS; i++)
 	{
-		hr = mDevice5->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&mConstantBufferResource[i])
-		);
-		if (FAILED(hr))
-			return false;
+			hr = mDevice5->CreateCommittedResource(
+				&heapProperties,
+				D3D12_HEAP_FLAG_NONE,
+				&resourceDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&mConstantBufferResources[i][location])
+			);
+			if (FAILED(hr))
+				return false;
 
-		mConstantBufferResource[i]->SetName(L"cb heap");
+			mConstantBufferResources[i][location]->SetName(L"cb heap");
 
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = mConstantBufferResource[i]->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = cbSizeAligned;
-		mDevice5->CreateConstantBufferView(&cbvDesc, mDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+			cbvDesc.BufferLocation = mConstantBufferResources[i][location]->GetGPUVirtualAddress();
+			cbvDesc.SizeInBytes = cbSizeAligned;
+			mDevice5->CreateConstantBufferView(&cbvDesc, mDescriptorHeaps[i][location]->GetCPUDescriptorHandleForHeapStart());
 	}
 
 	return true;

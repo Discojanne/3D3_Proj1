@@ -4,6 +4,7 @@
 ConstantBufferD3D12::ConstantBufferD3D12(std::string NAME, unsigned int location)
 {
 	this->name = NAME;
+	this->location = location;
 }
 
 ConstantBufferD3D12::~ConstantBufferD3D12()
