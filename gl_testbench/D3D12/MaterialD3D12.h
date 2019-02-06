@@ -78,11 +78,10 @@ private:
 	std::string name;
 
 
-	ID3D12Device5*			device			= nullptr;
-	ID3D12RootSignature*	mRootSignature	= nullptr;
+	ID3D12Device5* device;
+	ID3D12RootSignature*		mRootSignature = nullptr;
 
-	ID3D12PipelineState*	mPipeLineState	= nullptr;
-
+	ID3D12PipelineState* mPipeLineState = nullptr;
 	//unsigned int program;
 	int compileShader(ShaderType type, std::string& errString);
 	std::vector<std::string> expandShaderText(std::string& shaderText, ShaderType type);

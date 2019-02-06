@@ -36,7 +36,6 @@ void MaterialD3D12::setShader(const std::string & shaderFileName, ShaderType typ
 
 void MaterialD3D12::removeShader(ShaderType type)
 {
-
 }
 
 int MaterialD3D12::compileMaterial(std::string & errString)
@@ -107,10 +106,10 @@ int MaterialD3D12::compileMaterial(std::string & errString)
 	gpsd.pRootSignature = mRootSignature;
 	gpsd.InputLayout = inputLayoutDesc;
 	gpsd.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(Material::ShaderType::VS)]->GetBufferPointer());
-	gpsd.VS.BytecodeLength = shaderBlob[static_cast<int>(Material::ShaderType::VS)]->GetBufferSize();
-	gpsd.PS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(Material::ShaderType::PS)]->GetBufferPointer());
-	gpsd.PS.BytecodeLength = shaderBlob[static_cast<int>(Material::ShaderType::PS)]->GetBufferSize();
+	gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(ShaderType::VS)]->GetBufferPointer());
+	gpsd.VS.BytecodeLength = shaderBlob[static_cast<int>(ShaderType::VS)]->GetBufferSize();
+	gpsd.PS.pShaderBytecode = reinterpret_cast<void*>(shaderBlob[static_cast<int>(ShaderType::PS)]->GetBufferPointer());
+	gpsd.PS.BytecodeLength = shaderBlob[static_cast<int>(ShaderType::PS)]->GetBufferSize();
 
 	//Specify render target and depthstencil usage.
 	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -155,12 +154,10 @@ void MaterialD3D12::setDiffuse(Color c)
 
 void MaterialD3D12::updateConstantBuffer(const void * data, size_t size, unsigned int location)
 {
-	constantBuffers[location]->setData(data, size,this, location);
 }
 
 void MaterialD3D12::addConstantBuffer(std::string name, unsigned int location)
 {
-	constantBuffers[location] = new ConstantBufferD3D12(name, location);
 }
 
 int MaterialD3D12::compileShader(ShaderType type, std::string & errString)

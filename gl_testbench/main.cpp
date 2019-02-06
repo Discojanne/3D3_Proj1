@@ -75,7 +75,7 @@ typedef union {
 
 void run() {
 
-#if defined(_WIN64) || defined (_WIN32)
+#if 1
 	MSG msg = { 0 };
 #else
 	SDL_Event windowEvent;
@@ -83,7 +83,7 @@ void run() {
 
 	while (true)
 	{
-#if defined(_WIN64) || defined (_WIN32)
+#if 1
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
@@ -224,7 +224,7 @@ int initialiseTestbench()
 
 	// one technique with wireframe
 	RenderState* renderState1 = renderer->makeRenderState();
-	//renderState1->setWireFrame(true);
+	renderState1->setWireFrame(true);
 
 	// basic technique
 	techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
@@ -323,9 +323,9 @@ int main(int argc, char *argv[])
 	initialiseTestbench();
 	run();
 	//shutdown();
-	while (1)
+	/*while (1)
 	{
 
-	}
+	}*/
 	return 0;
 };

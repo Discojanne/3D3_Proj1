@@ -63,11 +63,9 @@ private:
 	bool CreateShadersAndPiplelineState();						//7. Set up the pipeline state
 	bool CreateTriangleData();									//8. Create vertexdata
 	bool CreateRootSignature();
-	bool CreateConstantBufferResources(int location);
+	bool CreateConstantBufferResources();
 
 	static const unsigned int NUM_SWAP_BUFFERS = 2; //Number of buffers
-
-	std::unordered_map<Technique*, std::vector<Mesh*>> mDrawList;
 
 	ID3D12Device5*				mDevice5 = nullptr;
 
@@ -88,35 +86,27 @@ private:
 	D3D12_RECT					mScissorRect = {};
 
 	ID3D12RootSignature*		mRootSignature = nullptr;
-	//ID3D12PipelineState*		mPipeLineState = nullptr;
+	ID3D12PipelineState*		mPipeLineState = nullptr;
 
 	ID3D12Resource1*			mVertexBufferResource = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW	mVertexBufferView = {};
 
-	//struct ConstantBuffer
-	//{
-	//	DirectX::XMFLOAT4X4 world[32];
-	//	DirectX::XMFLOAT4 color[32];
-	//};
+	struct ConstantBuffer
+	{
+		DirectX::XMFLOAT4 diffuse_perMaterial;
+		DirectX::XMFLOAT4 translate_perObject[64];
 
-	//ID3D12DescriptorHeap*	mDescriptorHeap[NUM_SWAP_BUFFERS] = {};
-	//ID3D12Resource1*		mConstantBufferResource[NUM_SWAP_BUFFERS] = {};
-	//ConstantBuffer			mConstantBufferCPU = {};
-
-	struct CB_Struct{};
-
-	struct ConstantBuffer_Translation : public CB_Struct {
-		DirectX::XMFLOAT4 translation[32];
+	/*	DirectX::XMFLOAT4X4 world[32];
+		DirectX::XMFLOAT4 color[32];*/
+		//float colorChannelr[32];
+		//float colorChannelg[32];
+		//float colorChannelb[32];
+		//float colorChannela[32];
 	};
 
-	struct ConstantBuffer_Diffuse_Tint : public CB_Struct {
-		DirectX::XMFLOAT4 diffuse[32];
-	};
 
-	std::unordered_map<int, std::unordered_map<int, ID3D12DescriptorHeap*>> mDescriptorHeaps;
-	std::unordered_map<int, std::unordered_map<int, ID3D12Resource1*>>		mConstantBufferResources;
-	std::unordered_map<int, std::unordered_map<int, CB_Struct*>>		mConstantBuffers;
-
-
+	ID3D12DescriptorHeap*	mDescriptorHeap[NUM_SWAP_BUFFERS] = {};
+	ID3D12Resource1*		mConstantBufferResource[NUM_SWAP_BUFFERS] = {};
+	ConstantBuffer			mConstantBufferCPU = {};
 };
 

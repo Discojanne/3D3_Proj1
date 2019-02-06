@@ -1,8 +1,5 @@
 #include "D3D12Renderer.h"
 #include "MaterialD3D12.h"
-#include "../IA.h"
-#include "MeshD3D12.h"
-#include "ConstantBufferD3D12.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -56,7 +53,6 @@ Material * D3D12Renderer::makeMaterial(const std::string & name)
 {
 	MaterialD3D12* mat = new MaterialD3D12(name);
 	mat->device = mDevice5;
-
 	return mat;
 }
 
@@ -72,8 +68,7 @@ VertexBuffer * D3D12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_U
 
 ConstantBuffer * D3D12Renderer::makeConstantBuffer(std::string NAME, unsigned int location)
 {
-	ConstantBufferD3D12 *pCB = new ConstantBufferD3D12(NAME, location);
-	return pCB;
+	return nullptr;
 }
 
 RenderState * D3D12Renderer::makeRenderState()
@@ -109,7 +104,6 @@ std::string D3D12Renderer::getShaderExtension()
 int D3D12Renderer::initialize(unsigned int width, unsigned int height)
 {
 
-
 	HWND wndHandle = InitWindow(width, height);				//1. Create Window
 
 	if (wndHandle)
@@ -135,19 +129,20 @@ int D3D12Renderer::initialize(unsigned int width, unsigned int height)
 			//return -6;
 
 		if (!CreateRootSignature())							//7. Create root signature
+		{
 			return -7;
-		
-		/*==		Stuff below should not be done here		  ==*/
-		/*==The rest is called from main using the RendererAPI==*/
-		
-		//if (!CreateShadersAndPiplelineState())				//8. Set up the pipeline state
-		//	return -8;
-		if (!CreateConstantBufferResources(TRANSLATION))				//9. Create constant buffer data
+		}
+		if (!CreateShadersAndPiplelineState())				//8. Set up the pipeline state
+		{
+			return -8;
+		}
+
+
+		if (!CreateConstantBufferResources())				//9. Create constant buffer data
 			return -9;
-		if (!CreateConstantBufferResources(DIFFUSE_TINT))				//9. Create constant buffer data
-			return -9;
-		//if (!CreateTriangleData())							//10. Create vertexdata
-		//	return -10;
+
+		if (!CreateTriangleData()) //10. Create vertexdata
+			return -10;
 
 
 		WaitForGpu();
@@ -159,125 +154,136 @@ int D3D12Renderer::initialize(unsigned int width, unsigned int height)
 		return -1;
 	}
 
-	//DirectX::XMMATRIX WorldMatrix[32];
+	//Constant buffer 
+	ConstantBufferD3D12* cb_material = new ConstantBufferD3D12("Snopp", 0);
+	DirectX::XMFLOAT4 matCol = {1.0f, 0.3f, 0.0f, 1.0f};
 
-	//float rot[32] = {};
-	//float x[32] = {}, y[32] = {};
+	cb_material->setData( &matCol, sizeof(DirectX::XMFLOAT4), nullptr, 0);
 
-	////Stuff below is just to test rendering. Remove it
-	//MSG msg = { 0 };
-	//float time = 0;
-
-	//while (WM_QUIT != msg.message)
-	//{
-	//	time += 0.0001;
-
-	//	if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-	//	{
-	//		TranslateMessage(&msg);
-	//		DispatchMessage(&msg);
-	//	}
-	//	else
-	//	{
-	//		UINT backBufferIndex = mSwapChain4->GetCurrentBackBufferIndex();
-	//		
-	//		for (size_t i = 0; i < 32; i++)
-	//		{
-	//			x[i] = sin(0.02f * i * time);// cos(32.0f*i + time);// *sin(i * time);
-	//			y[i] = sin(i / 32.0f + time);
-	//		}
-
-	//		for (size_t i = 0; i < 32; i++)
-	//		{
-	//			//WorldMatrix[i] = DirectX::XMMatrixScaling(0.2f, 0.2f, 0.2f);
-
-	//			//WorldMatrix[i] = DirectX::XMMatrixMultiply( WorldMatrix[i], DirectX::XMMatrixTranslation(x[i], y[i], 0));
-	//			WorldMatrix[i] = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(x[i], y[i], 0));
-	//			DirectX::XMStoreFloat4x4(&mConstantBufferCPU.world[i], WorldMatrix[i]);
-
-	//			mConstantBufferCPU.color[i] = {1.0f, 0.5f, 0.5f, 1.0f};
-	//	
-	//		}
+	ConstantBufferD3D12* cb_perObject[64];
+	for (size_t i = 0; i < 64; i++)
+	{
+		cb_perObject[i] = new ConstantBufferD3D12("en", 1);
+	}
 
 
 
-	//		//Update GPU memory
-	//		void* mappedMem = nullptr;
-	//		D3D12_RANGE readRange = { 0, 0 }; //We do not intend to read this resource on the CPU.
-	//		if (SUCCEEDED(mConstantBufferResource[backBufferIndex]->Map(0, &readRange, &mappedMem)))
-	//		{
-	//			memcpy(mappedMem, &mConstantBufferCPU, sizeof(ConstantBuffer));
+//Start
 
-	//			D3D12_RANGE writeRange = { 0, sizeof(ConstantBuffer) };
-	//			mConstantBufferResource[backBufferIndex]->Unmap(0, &writeRange);
-	//		}
+	//Stuff below is just to test rendering. Remove it
+	MSG msg = { 0 };
+	float time = 0;
+
+	while (WM_QUIT != msg.message)
+	{
+		time += 0.0001;
+
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else
+		{
+			UINT backBufferIndex = mSwapChain4->GetCurrentBackBufferIndex();
+
+			for (int i = 0; i < 64; i++)
+			{
+				const DirectX::XMFLOAT4 trans{
+					sin(time*0.5f + i / 10.0f) * 0.5f,
+					cos(time*2.0f + i / 10.0f) * 0.5f,
+					0.0f,
+					0.0f
+				};
+				cb_perObject[i]->setData(&trans, sizeof(trans), nullptr, 2);
+			}
+
+			time += 0.0001;
+
+			//Render
+
+			//Command list allocators can only be reset when the associated command lists have
+			//finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
+			mCommandAllocator->Reset();
+			mCommandList4->Reset(mCommandAllocator, mPipeLineState);
+			
+			//Set constant buffer descriptor heap
+			ID3D12DescriptorHeap* descriptorHeaps[] = { mDescriptorHeap[backBufferIndex] };
+			mCommandList4->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
+
+			//Set root signature
+			mCommandList4->SetGraphicsRootSignature(mRootSignature);
+
+			//Set root descriptor table to index 0 in previously set root signature
+			mCommandList4->SetGraphicsRootDescriptorTable(0,
+				mDescriptorHeap[backBufferIndex]->GetGPUDescriptorHandleForHeapStart());
+
+			//Set necessary states.
+			mCommandList4->RSSetViewports(1, &mViewport);
+			mCommandList4->RSSetScissorRects(1, &mScissorRect);
+
+			//Indicate that the back buffer will be used as render target.
+			SetResourceTransitionBarrier(mCommandList4,
+				mRenderTargets[backBufferIndex],
+				D3D12_RESOURCE_STATE_PRESENT,		//state before
+				D3D12_RESOURCE_STATE_RENDER_TARGET	//state after
+			);
+
+			//Record commands.
+			//Get the handle for the current render target used as back buffer.
+			D3D12_CPU_DESCRIPTOR_HANDLE cdh = mRenderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+			cdh.ptr += mRenderTargetDescriptorSize * backBufferIndex;
+
+			mCommandList4->OMSetRenderTargets(1, &cdh, true, nullptr);
+
+			float clearColor[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+			mCommandList4->ClearRenderTargetView(cdh, clearColor, 0, nullptr);
+
+			mCommandList4->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			mCommandList4->IASetVertexBuffers(0, 1, &mVertexBufferView);
 
 
-	//		//Render
+			//Update GPU memory
+			void* mappedMem = nullptr;
+			D3D12_RANGE readRange = { 0, 0 }; //We do not intend to read this resource on the CPU.
 
-	//		//Command list allocators can only be reset when the associated command lists have
-	//		//finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
-	//		mCommandAllocator->Reset();
-	//		//mCommandList4->Reset(mCommandAllocator, mPipeLineState);
+			if (SUCCEEDED(mConstantBufferResource[backBufferIndex]->Map(0, &readRange, &mappedMem)))
+			{
+				memcpy(mappedMem, cb_material->buff, sizeof(DirectX::XMFLOAT4));
+				for (size_t i = 0; i < 64; i++)
+				{
+					memcpy(static_cast<void*>(static_cast<char*>(mappedMem) + cb_perObject[i]->size * i + sizeof(DirectX::XMFLOAT4)), cb_perObject[i]->buff, cb_perObject[i]->size);
+				}
 
-	//		//Set constant buffer descriptor heap
-	//		ID3D12DescriptorHeap* descriptorHeaps[] = { mDescriptorHeap[backBufferIndex] };
-	//		mCommandList4->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
+				D3D12_RANGE writeRange = { 0, sizeof(ConstantBuffer) };
+				mConstantBufferResource[backBufferIndex]->Unmap(0, &writeRange);
+			}
 
-	//		//Set root signature
-	//		mCommandList4->SetGraphicsRootSignature(mRootSignature);
+			mCommandList4->DrawInstanced(6, min((int)(time * 3), 64), 0, 0);
+			
+			//Indicate that the back buffer will now be used to present.
+			SetResourceTransitionBarrier(mCommandList4,
+				mRenderTargets[backBufferIndex],
+				D3D12_RESOURCE_STATE_RENDER_TARGET,	//state before
+				D3D12_RESOURCE_STATE_PRESENT		//state after
+			);
 
-	//		//Set root descriptor table to index 0 in previously set root signature
-	//		mCommandList4->SetGraphicsRootDescriptorTable(0,
-	//			mDescriptorHeap[backBufferIndex]->GetGPUDescriptorHandleForHeapStart());
+			//Close the list to prepare it for execution.
+			mCommandList4->Close();
 
-	//		//Set necessary states.
-	//		mCommandList4->RSSetViewports(1, &mViewport);
-	//		mCommandList4->RSSetScissorRects(1, &mScissorRect);
+			//Execute the command list.
+			ID3D12CommandList* listsToExecute[] = { mCommandList4 };
+			mCommandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
 
-	//		//Indicate that the back buffer will be used as render target.
-	//		SetResourceTransitionBarrier(mCommandList4,
-	//			mRenderTargets[backBufferIndex],
-	//			D3D12_RESOURCE_STATE_PRESENT,		//state before
-	//			D3D12_RESOURCE_STATE_RENDER_TARGET	//state after
-	//		);
+			//Present the frame.
+			DXGI_PRESENT_PARAMETERS pp = {};
+			mSwapChain4->Present1(0, 0, &pp);
 
-	//		//Record commands.
-	//		//Get the handle for the current render target used as back buffer.
-	//		D3D12_CPU_DESCRIPTOR_HANDLE cdh = mRenderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
-	//		cdh.ptr += mRenderTargetDescriptorSize * backBufferIndex;
+			WaitForGpu(); //Wait for GPU to finish.
+						  //NOT BEST PRACTICE, only used as such for simplicity.
+		}
+	}
 
-	//		mCommandList4->OMSetRenderTargets(1, &cdh, true, nullptr);
-
-	//		float clearColor[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	//		mCommandList4->ClearRenderTargetView(cdh, clearColor, 0, nullptr);
-
-	//		mCommandList4->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//		mCommandList4->IASetVertexBuffers(0, 1, &mVertexBufferView);
-	//		mCommandList4->DrawInstanced(3, 32, 0, 0);
-	//		
-	//		//Indicate that the back buffer will now be used to present.
-	//		SetResourceTransitionBarrier(mCommandList4,
-	//			mRenderTargets[backBufferIndex],
-	//			D3D12_RESOURCE_STATE_RENDER_TARGET,	//state before
-	//			D3D12_RESOURCE_STATE_PRESENT		//state after
-	//		);
-
-	//		//Close the list to prepare it for execution.
-	//		mCommandList4->Close();
-
-	//		//Execute the command list.
-	//		ID3D12CommandList* listsToExecute[] = { mCommandList4 };
-	//		mCommandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
-
-	//		//Present the frame.
-	//		DXGI_PRESENT_PARAMETERS pp = {};
-	//		mSwapChain4->Present1(0, 0, &pp);
-
-	//		WaitForGpu(); //Wait for GPU to finish.
-	//					  //NOT BEST PRACTICE, only used as such for simplicity.
-	//	}
-	//}
 
 	return 0;
 }
@@ -305,51 +311,10 @@ void D3D12Renderer::setRenderState(RenderState * ps)
 
 void D3D12Renderer::submit(Mesh* mesh)
 {
-	mDrawList[mesh->technique].push_back(mesh);
 }
 
 void D3D12Renderer::frame()
 {
-	UINT backBufferIndex = mSwapChain4->GetCurrentBackBufferIndex();
-
-	for (auto technique : mDrawList)//For each technique/Material
-	{
-		//Enable the material, material specific constant buffer could be set inside enable().
-		technique.first->enable(this);
-
-		int nObjectsWithTechnique = technique.second.size();
-		int nQueuedToDraw = 0;
-		ConstantBufferD3D12* cb_perObject;
-
-		while (nQueuedToDraw < nObjectsWithTechnique) 
-		{
-			//Update GPU memory
-			D3D12_RANGE readRange = { 0, 0 }; //We do not intend to read this resource on the CPU.
-			void* mappedMem = nullptr;
-
-			if (SUCCEEDED(mConstantBufferResources[backBufferIndex][cb_perObject->location]->Map(0, &readRange, &mappedMem)))
-			{
-				int nQueuedToDraw2 = 0;
-
-				for (size_t i = 0; i < 50 && nQueuedToDraw < nObjectsWithTechnique; i++)//Draw 50 at a time
-				{
-					cb_perObject = static_cast<ConstantBufferD3D12*>(technique.second.at(i)->txBuffer);
-
-					//Copy object data to constantbuffer. /*Casting void* to char* so i can add offset in bytes*/
-					memcpy(static_cast<void*>(static_cast<char*>(mappedMem) + i * cb_perObject->buffSize), technique.second[nQueuedToDraw]->txBuffer, cb_perObject->buffSize);
-
-					nQueuedToDraw++;
-					nQueuedToDraw2++;
-				}
-				//D3D12_RANGE writeRange = { 0, sizeof(ConstantBuffer) };
-				D3D12_RANGE writeRange = { 0, cb_perObject->buffSize * nQueuedToDraw2 }; // Dont copy more data to GPU than what is needed. (Not tested yet)
-				mConstantBufferResources[backBufferIndex][cb_perObject->location]->Unmap(0, &writeRange);
-			}
-
-		}
-	}
-
-	mDrawList.clear();
 }
 
 void D3D12Renderer::present()
@@ -613,10 +578,10 @@ bool D3D12Renderer::CreateShadersAndPiplelineState()
 	////// Shader Compiles //////
 	ID3DBlob* vertexBlob;
 	hr = D3DCompileFromFile(
-		L"D3D12/VertexShader.hlsl", // filename
+		L"../assets/D3D12/VertexShader_test.hlsl", // filename
 		nullptr,		// optional macros
 		nullptr,		// optional include files
-		"VS_main",		// entry point
+		"main",		// entry point
 		"vs_5_0",		// shader model (target)
 		0,				// shader compile options			// here DEBUGGING OPTIONS
 		0,				// effect compile options
@@ -632,10 +597,10 @@ bool D3D12Renderer::CreateShadersAndPiplelineState()
 
 	ID3DBlob* pixelBlob;
 	hr = D3DCompileFromFile(
-		L"D3D12/PixelShader.hlsl", // filename
+		L"../assets/D3D12/FragmentShader_test.hlsl", // filename
 		nullptr,		// optional macros
 		nullptr,		// optional include files
-		"PS_main",		// entry point
+		"main",		// entry point
 		"ps_5_0",		// shader model (target)
 		0,				// shader compile options			// here DEBUGGING OPTIONS
 		0,				// effect compile options
@@ -679,7 +644,7 @@ bool D3D12Renderer::CreateShadersAndPiplelineState()
 	gpsd.SampleMask = UINT_MAX;
 
 	//Specify rasterizer behaviour.
-	gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
 	gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 
 	//Specify blend descriptions.
@@ -691,7 +656,7 @@ bool D3D12Renderer::CreateShadersAndPiplelineState()
 	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
 		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
 
-	//hr = mDevice5->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&mPipeLineState));
+	hr = mDevice5->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&mPipeLineState));
 	if (FAILED(hr))
 	{
 		return false;
@@ -703,15 +668,24 @@ bool D3D12Renderer::CreateShadersAndPiplelineState()
 bool D3D12Renderer::CreateTriangleData()
 {
 	HRESULT hr;
-	Vertex triangleVertices[3] =
+	Vertex triangleVertices[6] =
 	{
-		0.0f, 0.5f, 0.0f,	//v0 pos
+		0.0f, 0.3f, 0.0f,	//v0 pos
 		1.0f, 0.0f, 0.0f,	//v0 color
 
-		0.5f, -0.5f, 0.0f,	//v1
+		0.3f, -0.3f, 0.0f,	//v1
 		0.0f, 1.0f, 0.0f,	//v1 color
 
-		-0.5f, -0.5f, 0.0f, //v2
+		-0.3f, -0.3f, 0.0f, //v2
+		0.0f, 0.0f, 1.0f,	//v2 color
+
+		0.0f, 0.3f, 0.0f,	//v0 pos
+		1.0f, 0.0f, 0.0f,	//v0 color
+
+		-0.3f, 0.6f, 0.0f,	//v1
+		0.0f, 1.0f, 0.0f,	//v1 color
+
+		0.3f, 0.6f, 0.0f, //v2
 		0.0f, 0.0f, 1.0f	//v2 color
 	};
 
@@ -768,17 +742,12 @@ bool D3D12Renderer::CreateRootSignature()
 	HRESULT hr;
 
 	//define descriptor range(s)
-	D3D12_DESCRIPTOR_RANGE  dtRanges[2];
+	D3D12_DESCRIPTOR_RANGE  dtRanges[1];
 	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 	dtRanges[0].NumDescriptors = 1; //only one CB in this example
 	dtRanges[0].BaseShaderRegister = 0; //register b0
-	dtRanges[0].RegisterSpace = TRANSLATION; //register(b0,space0);
+	dtRanges[0].RegisterSpace = 0; //register(b0,space0);
 	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	dtRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	dtRanges[1].NumDescriptors = 1; //only one CB in this example
-	dtRanges[1].BaseShaderRegister = 1; //register b0
-	dtRanges[1].RegisterSpace = DIFFUSE_TINT; //register(b0,space0);
-	dtRanges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//create a descriptor table
 	D3D12_ROOT_DESCRIPTOR_TABLE dt;
@@ -822,19 +791,19 @@ bool D3D12Renderer::CreateRootSignature()
 	return true;
 }
 
-bool D3D12Renderer::CreateConstantBufferResources(int location)
+bool D3D12Renderer::CreateConstantBufferResources()
 {
 	HRESULT hr;
 
 	for (int i = 0; i < NUM_SWAP_BUFFERS; i++)
 	{
-			D3D12_DESCRIPTOR_HEAP_DESC heapDescriptorDesc = {};
-			heapDescriptorDesc.NumDescriptors = 1;
-			heapDescriptorDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-			heapDescriptorDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			hr = mDevice5->CreateDescriptorHeap(&heapDescriptorDesc, IID_PPV_ARGS(&mDescriptorHeaps[i][location]));
-			if (FAILED(hr))
-				return false;
+		D3D12_DESCRIPTOR_HEAP_DESC heapDescriptorDesc = {};
+		heapDescriptorDesc.NumDescriptors = 1;
+		heapDescriptorDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDescriptorDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		hr = mDevice5->CreateDescriptorHeap(&heapDescriptorDesc, IID_PPV_ARGS(&mDescriptorHeap[i]));
+		if (FAILED(hr))
+			return false;
 	}
 
 	UINT cbSizeAligned = (sizeof(ConstantBuffer) + 255) & ~255;	// 256-byte aligned CB.
@@ -858,23 +827,23 @@ bool D3D12Renderer::CreateConstantBufferResources(int location)
 	//Create a resource heap, descriptor heap, and pointer to cbv for each frame
 	for (int i = 0; i < NUM_SWAP_BUFFERS; i++)
 	{
-			hr = mDevice5->CreateCommittedResource(
-				&heapProperties,
-				D3D12_HEAP_FLAG_NONE,
-				&resourceDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&mConstantBufferResources[i][location])
-			);
-			if (FAILED(hr))
-				return false;
+		hr = mDevice5->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&mConstantBufferResource[i])
+		);
+		if (FAILED(hr))
+			return false;
 
-			mConstantBufferResources[i][location]->SetName(L"cb heap");
+		mConstantBufferResource[i]->SetName(L"cb heap");
 
-			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-			cbvDesc.BufferLocation = mConstantBufferResources[i][location]->GetGPUVirtualAddress();
-			cbvDesc.SizeInBytes = cbSizeAligned;
-			mDevice5->CreateConstantBufferView(&cbvDesc, mDescriptorHeaps[i][location]->GetCPUDescriptorHandleForHeapStart());
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = mConstantBufferResource[i]->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = cbSizeAligned;
+		mDevice5->CreateConstantBufferView(&cbvDesc, mDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
 	}
 
 	return true;

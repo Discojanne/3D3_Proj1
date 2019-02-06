@@ -12,14 +12,12 @@ public:
 
 private:
 	friend D3D12Renderer;
-	//D3D12Renderer *m_pRenderer;
-
-	std::string name;
-	unsigned int location;
+	//std::string name;
+	//unsigned int location;
 	//unsigned int handle;
 	//unsigned int index;
 	void* buff = nullptr;
-	int buffSize = 0;
+	int size;
 	//void* lastMat;
 };
 

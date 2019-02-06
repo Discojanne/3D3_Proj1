@@ -9,13 +9,14 @@ struct VSIn
 //#ifdef TEXTCOORD
 //    float2 uv       : TEXTCOORD;
 //#endif
-
-//	float3 color	: COLOR;
+    float3 pos : POSITION;
+	float3 color	: COLOR;
 };
 
 struct VSOut
 {
-	float4 pos		: SV_POSITION;
+    float4 pos : SV_POSITION;
+    float4 color : COLOR;
 
 //#ifdef NORMAL
 //    float4 norm		: NORMAL;

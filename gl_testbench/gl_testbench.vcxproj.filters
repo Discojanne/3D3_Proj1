@@ -18,6 +18,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,6 +87,9 @@
     <ClCompile Include="OpenGL\VertexBufferGL.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="D3D12\MeshGL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D3D12\RenderStateGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,12 +115,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D3D12\MaterialD3D12.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="D3D12\MeshD3D12.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -191,6 +191,9 @@
     <ClInclude Include="OpenGL\VertexBufferGL.h">
       <Filter>Source Files\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="D3D12\MeshGL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="D3D12\RenderStateGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -221,11 +224,11 @@
     <ClInclude Include="D3D12\Helper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D12\MeshD3D12.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="..\assets\D3D12\VertexShader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
     <FxCompile Include="..\assets\D3D12\FragmentShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
